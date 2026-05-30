@@ -11,7 +11,7 @@ st.set_page_config(page_title="AI Financial Coach", layout="wide")
 def load_data():
     # Pastikan file df_val2.csv sudah kamu upload ke GitHub yang sama
     try:
-        df = pd.read_csv('df_val2.csv')
+        df = pd.read_csv('df_clean_summary.csv')
         return df
     except:
         return None
