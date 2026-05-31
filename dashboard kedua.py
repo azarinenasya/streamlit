@@ -128,17 +128,29 @@ def generate_data(n=16432, seed=42):
 df = generate_data()
 
 # ─── Sidebar ─────────────────────────────────────────────────────────────────────
-st.markdown("## Deskripsi")
-st.info("Dashboard ini dirancang untuk memvisualisasikan dataset utama yang digunakan dalam pengembangan **SpendWise AI**.")
-st.markdown("---")
-st.markdown("### Pertanyaan Bisnis")
-st.markdown("""
-<div class='bq-box'><b>Q1.</b> Apa pola alokasi keuangan yang membedakan tiap cluster dan seberapa besar proporsinya?</div>
-<div class='bq-box'><b>Q2.</b> Fitur finansial mana yang paling membedakan kondisi Crisis, Rentan, dan Aman?</div>
+with st.sidebar:
+    st.markdown("## 💰 SpendWise AI")
+    # Deskripsi yang kamu minta
+    st.info("Dashboard ini dirancang untuk memvisualisasikan dataset utama yang digunakan dalam pengembangan **SpendWise AI**.")
+    
+    st.markdown("---")
+    st.markdown("### Filter Global")
+    # Pastikan variabel 'selected_clusters' ini ada
+    selected_clusters = st.multiselect(
+        "Pilih Cluster untuk Grafik Perbandingan:",
+        options=[0, 1, 2], 
+        default=[0, 1, 2],
+        format_func=lambda x: f"Cluster {x} - {CLUSTER_NAMES[x]}"
+    )
+    
+    st.markdown("---")
+    st.markdown("### Pertanyaan Bisnis")
+    st.markdown("""
+<div class='bq-box'><b>Q1.</b> Apa pola alokasi keuangan yang membedakan cluster Crisis, Rentan, dan Aman?</div>
+<div class='bq-box'><b>Q2.</b> Fitur mana yang paling signifikan membedakan individu (Top 5)?</div>
 """, unsafe_allow_html=True)
-st.markdown("---")
-st.caption("Dataset: 16,432 observasi · 12 fitur rasio · 3 cluster")
 
+# Definisikan df_f setelah selected_clusters dibuat di sidebar
 df_f = df[df["Cluster"].isin(selected_clusters)]
 
 # ─── Header ──────────────────────────────────────────────────────────────────────
