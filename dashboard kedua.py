@@ -345,7 +345,8 @@ fig_radar.update_layout(
     height=450,
     margin=dict(t=20, b=20),
 )
-    st.plotly_chart(fig_radar, use_container_width=True)
+
+st.plotly_chart(fig_radar, use_container_width=True)
 
 with tab2:
     means_all = df_f.groupby("Cluster_Label")[FEATURE_COLS].mean().reset_index()
