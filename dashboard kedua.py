@@ -30,17 +30,17 @@ h1, h2, h3 { font-family: 'Syne', sans-serif !important; font-weight: 800 !impor
 .metric-card.rentan { border-color: #fcd34d; background: #fffbeb; }
 .metric-card.aman   { border-color: #6ee7b7; background: #f0fdf4; }
 
-/* Styling khusus untuk KPI Grid Q1 */
-.kpi-box {
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #edf2f7;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+.cluster-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 6px; color: #6b7280;
 }
-.kpi-label { font-size: 0.8rem; color: #718096; margin-bottom: 5px; font-weight: 600; text-transform: uppercase;}
-.kpi-value { font-size: 1.4rem; font-weight: 800; color: #2d3748; }
+.cluster-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem; font-weight: 800; line-height: 1; color: #111827;
+}
+.cluster-sub { font-size: 0.8rem; color: #9ca3af; margin-top: 4px; }
 
 .section-header {
     font-family: 'Syne', sans-serif;
@@ -80,6 +80,18 @@ PRETTY = {
     "Miscellaneous_Ratio": "Lain-lain", "Savings_Ratio": "Tabungan",
 }
 
+def hex_to_rgba(hex_color, alpha=0.15):
+    r = int(hex_color[1:3], 16)
+    g = int(hex_color[3:5], 16)
+    b = int(hex_color[5:7], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+LIGHT_LAYOUT = dict(
+    paper_bgcolor="white", plot_bgcolor="#f9fafb",
+    font_color="#374151",
+    legend=dict(bgcolor="white", bordercolor="#e5e7eb", borderwidth=1),
+)
+
 # ─── Data ────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def generate_data(n=16432, seed=42):
@@ -104,7 +116,11 @@ def generate_data(n=16432, seed=42):
             svng = max(min_svng, 1 - sum(vals.values()))
             rows.append([cid] + [vals[k] for k in keys] + [svng])
 
-    cols = ["Cluster"] + FEATURE_COLS
+    cols = ["Cluster"] + [
+        "Rent_Ratio","Loan_Repayment_Ratio","Insurance_Ratio","Groceries_Ratio",
+        "Transport_Ratio","Eating_Out_Ratio","Entertainment_Ratio","Utilities_Ratio",
+        "Healthcare_Ratio","Education_Ratio","Miscellaneous_Ratio","Savings_Ratio"
+    ]
     df = pd.DataFrame(rows, columns=cols)
     df["Cluster_Label"] = df["Cluster"].map(CLUSTER_NAMES)
     return df
@@ -115,46 +131,125 @@ df = generate_data()
 with st.sidebar:
     st.markdown("## 💰 Financial Health")
     st.markdown("---")
+    st.markdown("### Filter Cluster")
+    selected_clusters = st.multiselect(
+        "Tampilkan cluster:",
+        options=[0, 1, 2], default=[0, 1, 2],
+        format_func=lambda x: f"{'🔴' if x==0 else '🟡' if x==1 else '🟢'} Cluster {x} – {CLUSTER_NAMES[x]}"
+    )
+    st.markdown("---")
     st.markdown("### Pertanyaan Bisnis")
     st.markdown("""
-<div class='bq-box'><b>Q1.</b> Apa pola alokasi keuangan yang membedakan cluster Crisis, Rentan, dan Aman — dan seberapa besar proporsinya?</div>
-<div class='bq-box'><b>Q2.</b> Fitur mana yang paling signifikan membedakan individu Crisis, Rentan, dan Aman?</div>
+<div class='bq-box'><b>Q1.</b> Apa pola alokasi keuangan yang membedakan tiap cluster dan seberapa besar proporsinya?</div>
+<div class='bq-box'><b>Q2.</b> Fitur finansial mana yang paling membedakan kondisi Crisis, Rentan, dan Aman?</div>
 """, unsafe_allow_html=True)
+    st.markdown("---")
+    st.caption("Dataset: 16,432 observasi · 12 fitur rasio · 3 cluster")
+
+df_f = df[df["Cluster"].isin(selected_clusters)]
 
 # ─── Header ──────────────────────────────────────────────────────────────────────
-st.markdown("<h1 style='margin-bottom:0;'>Financial Health Clustering</h1>", unsafe_allow_html=True)
+st.markdown("""
+<h1 style='margin-bottom:0; color:#111827'>Financial Health Clustering</h1>
+<p style='color:#9ca3af; font-size:0.9rem; margin-top:4px'>
+Analisis Segmentasi Keuangan Individu
+</p>
+""", unsafe_allow_html=True)
 st.markdown("---")
 
-# ─── KPI Utama (Proporsi) ────────────────────────────────────────────────────────
+# ─── KPI Cards ───────────────────────────────────────────────────────────────────
 counts = df["Cluster"].value_counts().sort_index()
-c1, c2, c3, c4 = st.columns(4)
-with c1:
-    st.markdown(f"<div class='metric-card'><div class='kpi-label'>Total Data</div><div class='kpi-value'>{len(df):,}</div></div>", unsafe_allow_html=True)
-for i, col in enumerate([c2, c3, c4]):
-    count = counts.get(i, 0)
-    pct = (count/len(df)*100)
-    cls_name = CLUSTER_NAMES[i]
-    color_class = cls_name.lower()
-    col.markdown(f"""<div class='metric-card {color_class}'>
-        <div class='kpi-label' style='color:{COLORS[i]}'>{cls_name}</div>
-        <div class='kpi-value'>{pct:.1f}%</div>
-        <div style='font-size:0.8rem; color:#9ca3af'>{count:,} orang</div>
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.markdown(f"""<div class='metric-card'>
+        <div class='cluster-label'>Total Individu</div>
+        <div class='cluster-value'>{len(df):,}</div>
+        <div class='cluster-sub'>16.432 observasi</div>
+    </div>""", unsafe_allow_html=True)
+with col2:
+    c = counts.get(0, 0)
+    st.markdown(f"""<div class='metric-card crisis'>
+        <div class='cluster-label' style='color:#ef4444'>🔴 Crisis</div>
+        <div class='cluster-value' style='color:#ef4444'>{c:,}</div>
+        <div class='cluster-sub'>{c/len(df)*100:.1f}% dari total</div>
+    </div>""", unsafe_allow_html=True)
+with col3:
+    c = counts.get(1, 0)
+    st.markdown(f"""<div class='metric-card rentan'>
+        <div class='cluster-label' style='color:#f59e0b'>🟡 Rentan</div>
+        <div class='cluster-value' style='color:#f59e0b'>{c:,}</div>
+        <div class='cluster-sub'>{c/len(df)*100:.1f}% dari total</div>
+    </div>""", unsafe_allow_html=True)
+with col4:
+    c = counts.get(2, 0)
+    st.markdown(f"""<div class='metric-card aman'>
+        <div class='cluster-label' style='color:#10b981'>🟢 Aman</div>
+        <div class='cluster-value' style='color:#10b981'>{c:,}</div>
+        <div class='cluster-sub'>{c/len(df)*100:.1f}% dari total</div>
     </div>""", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Q1 – DYNAMIC KPI METRICS
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown("<div class='section-header'>Q1 · Eksplorasi Alokasi Keuangan per Cluster</div>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
-selected_cls = st.selectbox("Pilih Cluster untuk Detail Alokasi:", options=[0, 1, 2], 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Q1 – POLA ALOKASI KEUANGAN
+# ═══════════════════════════════════════════════════════════════════════════════
+st.markdown("<div class='section-header'>Q1 · Pola Alokasi Keuangan per Cluster</div>", unsafe_allow_html=True)
+
+tab1, tab2, tab3 = st.tabs(["📊 Perbandingan Antar Cluster", "🥧 Komposisi Pengeluaran", "📋 Tabel Ringkasan"])
+
+with tab1:
+    st.markdown("#### Rata-rata Alokasi per Kategori (% dari Pendapatan)")
+    st.caption("Semakin panjang batang → semakin besar porsi pendapatan yang dialokasikan untuk kategori tersebut.")
+
+    means = df_f.groupby("Cluster")[FEATURE_COLS].mean().reset_index()
+    means_melt = means.melt(id_vars="Cluster", var_name="Feature", value_name="Ratio")
+    means_melt["Cluster_Label"] = means_melt["Cluster"].map(CLUSTER_NAMES)
+    means_melt["Feature_Pretty"] = means_melt["Feature"].map(PRETTY)
+    means_melt["Persen"] = (means_melt["Ratio"] * 100).round(1)
+    color_map = {CLUSTER_NAMES[k]: v for k, v in COLORS.items()}
+
+    # Sort by overall mean descending for readability
+    order = (df_f[FEATURE_COLS].mean().sort_values(ascending=False).index.tolist())
+    order_pretty = [PRETTY[f] for f in order]
+
+    fig_hbar = px.bar(
+        means_melt, y="Feature_Pretty", x="Persen",
+        color="Cluster_Label", barmode="group",
+        color_discrete_map=color_map,
+        orientation="h",
+        category_orders={"Feature_Pretty": order_pretty},
+        labels={"Feature_Pretty": "", "Persen": "% dari Pendapatan", "Cluster_Label": "Kondisi"},
+        text="Persen",
+    )
+    fig_hbar.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+    fig_hbar.update_layout(
+        paper_bgcolor="white", plot_bgcolor="#f9fafb", font_color="#374151",
+        xaxis=dict(gridcolor="#e5e7eb", ticksuffix="%", range=[0, 60]),
+        yaxis=dict(gridcolor="#e5e7eb"),
+        height=520, margin=dict(t=10, b=40, l=10, r=80),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                    bgcolor="white", bordercolor="#e5e7eb", borderwidth=1),
+    )
+    st.plotly_chart(fig_hbar, use_container_width=True)
+
+    st.markdown("""<div class='insight-box'>
+    💡 <b>Cara membaca:</b> Perhatikan perbedaan panjang batang antar warna pada baris yang sama.
+    Batang <b style='color:#ef4444'>merah (Crisis)</b> paling panjang di <i>Cicilan & Sewa</i> — artinya kelompok ini menghabiskan
+    lebih banyak untuk hutang. Batang <b style='color:#10b981'>hijau (Aman)</b> paling panjang di <i>Tabungan</i>.
+    </div>""", unsafe_allow_html=True)
+
+with tab2:
+    st.markdown("<div class='section-header'>Q1 · Eksplorasi Alokasi Keuangan per Cluster</div>", unsafe_allow_html=True)
+
+    selected_cls = st.selectbox("Pilih Cluster untuk Detail Alokasi:", options=[0, 1, 2], 
                             format_func=lambda x: f"Cluster {x} - {CLUSTER_NAMES[x]}")
 
-df_target = df[df["Cluster"] == selected_cls]
-avg_vals = df_target[FEATURE_COLS].mean()
+    df_target = df[df["Cluster"] == selected_cls]
+    avg_vals = df_target[FEATURE_COLS].mean()
 
 # Grid KPI untuk Rasio Keuangan
-st.markdown(f"#### Rata-rata Penggunaan Dana - Cluster {CLUSTER_NAMES[selected_cls]}")
-rows = [FEATURE_COLS[i:i + 4] for i in range(0, len(FEATURE_COLS), 4)]
+    st.markdown(f"#### Rata-rata Penggunaan Dana - Cluster {CLUSTER_NAMES[selected_cls]}")
+    rows = [FEATURE_COLS[i:i + 4] for i in range(0, len(FEATURE_COLS), 4)]
 
 for row_cols in rows:
     cols = st.columns(4)
@@ -174,51 +269,144 @@ st.markdown(f"""<div class='insight-box'>
 untuk Cicilan Hutang.
 </div>""", unsafe_allow_html=True)
 
+with tab3:
+    st.markdown("#### Rata-rata Alokasi per Kategori per Cluster")
+    means_tbl = df_f.groupby("Cluster_Label")[FEATURE_COLS].mean() * 100
+    means_tbl.columns = [PRETTY[c] for c in FEATURE_COLS]
+    means_tbl = means_tbl.round(1).astype(str) + "%"
+    st.dataframe(means_tbl, use_container_width=True)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Q2 – TOP 5 FITUR PALING BERBEDA
+# Q2 – FITUR PEMBEDA: SEMUA CLUSTER
 # ═══════════════════════════════════════════════════════════════════════════════
-st.markdown("<div class='section-header'>Q2 · Top 5 Fitur Paling Signifikan (Crisis vs Aman)</div>", unsafe_allow_html=True)
+st.markdown("<div class='section-header'>Q2 · Apa yang Membedakan Crisis, Rentan, dan Aman?</div>", unsafe_allow_html=True)
 
-# Hitung selisih antara Crisis (0) dan Aman (2)
 m0 = df[df["Cluster"] == 0][FEATURE_COLS].mean()
+m1 = df[df["Cluster"] == 1][FEATURE_COLS].mean()
 m2 = df[df["Cluster"] == 2][FEATURE_COLS].mean()
 
-diff_df = pd.DataFrame({
-    "Fitur": [PRETTY[f] for f in FEATURE_COLS],
-    "Selisih": (m0 - m2).values * 100
+tab4, tab5, tab6 = st.tabs(["🏆 Fitur Paling Berbeda", "📊 Perbandingan Langsung", "📋 Tabel Selisih"])
+
+with tab4:
+    st.markdown("<div class='section-header'>Q2 · Fitur Paling Signifikan (Top 5 Pembeda Crisis vs Aman)</div>", unsafe_allow_html=True)
+
+# Hitung selisih
+    m0 = df[df["Cluster"] == 0][FEATURE_COLS].mean()
+    m2 = df[df["Cluster"] == 2][FEATURE_COLS].mean()
+    diff_df = pd.DataFrame({
+        "Fitur": [PRETTY[f] for f in FEATURE_COLS],
+        "Selisih": (m0 - m2).values * 100
 })
+    diff_df["Abs_Selisih"] = diff_df["Selisih"].abs()
+    top_5 = diff_df.sort_values(by="Abs_Selisih", ascending=True).tail(5) # Asc True agar bar yang terpanjang di atas di plotly h-bar
 
-# Ambil Top 5 berdasarkan nilai absolut selisih terbesar
-diff_df["Abs_Selisih"] = diff_df["Selisih"].abs()
-top_5_diff = diff_df.sort_values(by="Abs_Selisih", ascending=False).head(5)
+# Warna custom: Merah jika Crisis > Aman, Hijau jika Aman > Crisis (Negatif)
+    top_5["Warna"] = top_5["Selisih"].apply(lambda x: COLORS[0] if x > 0 else COLORS[2])
 
-col_chart, col_desc = st.columns([2, 1])
+fig_q2 = px.bar(
+    top_5, x="Selisih", y="Fitur",
+    orientation="h",
+    text_auto=".1f",
+    labels={"Selisih": "Selisih Poin Persentase (Crisis vs Aman)"},
+    color="Warna", 
+    color_discrete_map="identity" # Menggunakan kode warna langsung dari kolom 'Warna'
+)
 
-with col_chart:
-    fig_top5 = px.bar(
-        top_5_diff, y="Fitur", x="Selisih",
-        orientation="h",
-        color="Selisih",
-        color_continuous_scale="RdYlGn_r", # Merah ke Hijau (Terbalik)
-        labels={"Selisih": "Selisih Poin Persentase (Crisis - Aman)"},
-        text_auto=".1f"
-    )
-    fig_top5.update_layout(
-        showlegend=False, height=400, margin=dict(t=10, b=10),
-        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)"
-    )
-    st.plotly_chart(fig_top5, use_container_width=True)
+fig_q2.update_layout(
+    height=400,
+    plot_bgcolor="white",
+    xaxis=dict(showgrid=True, gridcolor="#f0f0f0", zeroline=True, zerolinecolor="#333"),
+    yaxis=dict(title=""),
+    margin=dict(t=20, b=20, l=10, r=40)
+)
 
-with col_desc:
-    st.markdown("#### Kenapa Fitur Ini Signifikan?")
-    st.write("Grafik di samping menunjukkan fitur yang memiliki jurang pemisah paling lebar antara individu **Crisis** dan **Aman**.")
+col_left, col_right = st.columns([2, 1])
+with col_left:
+    st.plotly_chart(fig_q2, use_container_width=True)
+
+with col_right:
+    st.markdown("### Kesimpulan Fitur")
+    st.write("Berdasarkan perbandingan antara cluster **Crisis** dan **Aman**, ditemukan 5 fitur dengan perbedaan paling mencolok:")
     
-    for _, row in top_5_diff.iterrows():
-        arah = "lebih tinggi" if row['Selisih'] > 0 else "lebih rendah"
-        st.markdown(f"- **{row['Fitur']}**: Kelompok Crisis **{abs(row['Selisih']):.1f}%** {arah} dibanding kelompok Aman.")
+    # Ambil fitur teratas (terakhir karena sort ascending)
+    top_feature = top_5.iloc[-1]
+    st.success(f"**{top_feature['Fitur']}** adalah pembeda nomor 1 dengan selisih **{abs(top_feature['Selisih']):.1f}%**.")
+    
+    st.info("""
+    **Cara Membaca Grafik:**
+    *   **Batang Merah (+):** Pengeluaran yang jauh lebih tinggi di kelompok **Crisis**.
+    *   **Batang Hijau (-):** Alokasi yang jauh lebih tinggi di kelompok **Aman** (umumnya Tabungan).
+    """)
 
-st.markdown("""<div class='insight-box' style='background:#fff7ed; border-color:#fdba74; color:#9a3412'>
-⚠️ <b>Kesimpulan Utama:</b> Sesuai hipotesis, <b>Savings_Ratio</b> dan <b>Loan_Repayment_Ratio</b> selalu muncul di Top 5. 
-Individu Aman memiliki rasio tabungan yang jauh lebih besar, sementara individu Crisis terbebani oleh rasio cicilan hutang dan sewa rumah yang tinggi.
-</div>""", unsafe_allow_html=True)
+st.markdown(f"""
+<div class='insight-box'>
+    💡 <b>Analisis Bisnis:</b> Cluster <b>Crisis</b> (merah) sangat dipengaruhi oleh tingginya rasio <b>{top_5[top_5['Selisih']>0]['Fitur'].iloc[-1]}</b>, 
+    sedangkan cluster <b>Aman</b> (hijau) memiliki keunggulan mutlak pada rasio <b>Tabungan</b>. 
+    Hal ini menunjukkan bahwa strategi intervensi harus difokuskan pada pengurangan beban cicilan/sewa bagi kelompok Crisis.
+</div>
+""", unsafe_allow_html=True)
+
+with tab5:
+    st.markdown("#### Perbandingan Nilai Rata-rata per Fitur")
+    feat_sel = st.selectbox(
+        "Pilih kategori yang ingin dibandingkan:",
+        FEATURE_COLS, format_func=lambda x: PRETTY[x], key="featsel2"
+    )
+
+    means_bar = pd.DataFrame({
+        "Kondisi": [CLUSTER_NAMES[i] for i in [0, 1, 2]],
+        "Nilai": [df[df["Cluster"] == i][feat_sel].mean() * 100 for i in [0, 1, 2]],
+        "Warna": [COLORS[i] for i in [0, 1, 2]],
+    })
+
+    fig_compare = px.bar(
+        means_bar, x="Kondisi", y="Nilai",
+        color="Kondisi",
+        color_discrete_map={CLUSTER_NAMES[k]: v for k, v in COLORS.items()},
+        labels={"Nilai": "% dari Pendapatan", "Kondisi": ""},
+        text="Nilai",
+    )
+    fig_compare.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+    fig_compare.update_layout(
+        **LIGHT_LAYOUT,
+        yaxis=dict(gridcolor="#e5e7eb", ticksuffix="%",
+                   range=[0, means_bar["Nilai"].max() * 1.3]),
+        showlegend=False,
+        height=380, margin=dict(t=20, b=20),
+        title=dict(text=f"Rata-rata <b>{PRETTY[feat_sel]}</b> per Kondisi",
+                   font_color="#374151", font_size=14),
+    )
+    st.plotly_chart(fig_compare, use_container_width=True)
+
+    # Mini insight per feature
+    v0 = df[df["Cluster"]==0][feat_sel].mean()*100
+    v1 = df[df["Cluster"]==1][feat_sel].mean()*100
+    v2 = df[df["Cluster"]==2][feat_sel].mean()*100
+    st.markdown(f"""<div class='insight-box'>
+    📌 Untuk <b>{PRETTY[feat_sel]}</b>: kelompok <b style='color:#ef4444'>Crisis rata-rata {v0:.1f}%</b>,
+    <b style='color:#f59e0b'>Rentan {v1:.1f}%</b>, dan
+    <b style='color:#10b981'>Aman {v2:.1f}%</b> dari pendapatan mereka.
+    Selisih Crisis vs Aman: <b>{v0-v2:+.1f} poin persen</b>.
+    </div>""", unsafe_allow_html=True)
+
+with tab6:
+    st.markdown("#### Tabel Selisih Rata-rata Antar Kondisi")
+    st.caption("Nilai positif (+) = kondisi pertama lebih tinggi. Nilai negatif (−) = kondisi pertama lebih rendah.")
+
+    tbl = pd.DataFrame({
+        "Kategori": [PRETTY[f] for f in FEATURE_COLS],
+        "Crisis (%)": (m0 * 100).round(1).values,
+        "Rentan (%)": (m1 * 100).round(1).values,
+        "Aman (%)": (m2 * 100).round(1).values,
+        "Crisis vs Aman": ((m0 - m2) * 100).round(1).apply(lambda x: f"{x:+.1f}%").values,
+        "Crisis vs Rentan": ((m0 - m1) * 100).round(1).apply(lambda x: f"{x:+.1f}%").values,
+        "Rentan vs Aman": ((m1 - m2) * 100).round(1).apply(lambda x: f"{x:+.1f}%").values,
+    })
+    tbl["Crisis (%)"] = tbl["Crisis (%)"].apply(lambda x: f"{x:.1f}%")
+    tbl["Rentan (%)"] = tbl["Rentan (%)"].apply(lambda x: f"{x:.1f}%")
+    tbl["Aman (%)"]   = tbl["Aman (%)"].apply(lambda x: f"{x:.1f}%")
+    sort_order = (m0 - m2).abs().sort_values(ascending=False).index.tolist()
+    tbl_sorted = tbl.set_index("Kategori").loc[[PRETTY[f] for f in sort_order]].reset_index()
+    tbl_sorted.index = range(1, len(tbl_sorted) + 1)
+    st.dataframe(tbl_sorted, use_container_width=True)
