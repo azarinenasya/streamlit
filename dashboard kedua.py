@@ -223,7 +223,7 @@ with tab1:
     )
     fig_hbar.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig_hbar.update_layout(
-        **LIGHT_LAYOUT,
+        paper_bgcolor="white", plot_bgcolor="#f9fafb", font_color="#374151",
         xaxis=dict(gridcolor="#e5e7eb", ticksuffix="%", range=[0, 60]),
         yaxis=dict(gridcolor="#e5e7eb"),
         height=520, margin=dict(t=10, b=40, l=10, r=80),
@@ -318,11 +318,11 @@ with tab4:
     )
     fig_diff.update_traces(texttemplate="%{text:+.1f}%", textposition="outside")
     fig_diff.add_vline(x=0, line_dash="dash", line_color="#9ca3af", line_width=1)
-    fig_diff.update_layout(
-        **LIGHT_LAYOUT,
-        xaxis=dict(gridcolor="#e5e7eb", ticksuffix="%", zeroline=False),
+    fig_hbar.update_layout(
+        paper_bgcolor="white", plot_bgcolor="#f9fafb", font_color="#374151",
+        xaxis=dict(gridcolor="#e5e7eb", ticksuffix="%", range=[0, 60]),
         yaxis=dict(gridcolor="#e5e7eb"),
-        height=520, margin=dict(t=10, b=40, l=10, r=100),
+        height=520, margin=dict(t=10, b=40, l=10, r=80),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     bgcolor="white", bordercolor="#e5e7eb", borderwidth=1),
     )
