@@ -280,6 +280,10 @@ with tab3:
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("<div class='section-header'>Q2 · Apa yang Membedakan Crisis, Rentan, dan Aman?</div>", unsafe_allow_html=True)
 
+m0 = df[df["Cluster"] == 0][FEATURE_COLS].mean()
+m1 = df[df["Cluster"] == 1][FEATURE_COLS].mean()
+m2 = df[df["Cluster"] == 2][FEATURE_COLS].mean()
+
 tab4, tab5, tab6 = st.tabs(["🏆 Fitur Paling Berbeda", "📊 Perbandingan Langsung", "📋 Tabel Selisih"])
 
 with tab4:
@@ -392,16 +396,7 @@ with tab6:
     tbl["Crisis (%)"] = tbl["Crisis (%)"].apply(lambda x: f"{x:.1f}%")
     tbl["Rentan (%)"] = tbl["Rentan (%)"].apply(lambda x: f"{x:.1f}%")
     tbl["Aman (%)"]   = tbl["Aman (%)"].apply(lambda x: f"{x:.1f}%")
-    tbl_sorted = tbl.reindex(
-        ((m0 - m2).abs().sort_values(ascending=False)).index
-    ).reset_index(drop=True)
-    tbl_sorted.index = range(1, len(tbl_sorted)+1)
+    sort_order = (m0 - m2).abs().sort_values(ascending=False).index.tolist()
+    tbl_sorted = tbl.set_index("Kategori").loc[[PRETTY[f] for f in sort_order]].reset_index()
+    tbl_sorted.index = range(1, len(tbl_sorted) + 1)
     st.dataframe(tbl_sorted, use_container_width=True)
-
-# ─── Footer ─────────────────────────────────────────────────────────────────────
-st.markdown("---")
-st.markdown("""
-<p style='text-align:center; color:#d1d5db; font-size:0.78rem'>
-Financial Health Clustering Dashboard · Data Science Project · Streamlit + Plotly
-</p>
-""", unsafe_allow_html=True)
