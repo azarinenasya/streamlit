@@ -129,15 +129,15 @@ df = generate_data()
 
 # ─── Sidebar ─────────────────────────────────────────────────────────────────────
 st.markdown("## Deskripsi")
-    st.info("Dashboard ini dirancang untuk memvisualisasikan dataset utama yang digunakan dalam pengembangan **SpendWise AI**.")
-    st.markdown("---")
+st.info("Dashboard ini dirancang untuk memvisualisasikan dataset utama yang digunakan dalam pengembangan **SpendWise AI**.")
+st.markdown("---")
 st.markdown("### Pertanyaan Bisnis")
-    st.markdown("""
+st.markdown("""
 <div class='bq-box'><b>Q1.</b> Apa pola alokasi keuangan yang membedakan tiap cluster dan seberapa besar proporsinya?</div>
 <div class='bq-box'><b>Q2.</b> Fitur finansial mana yang paling membedakan kondisi Crisis, Rentan, dan Aman?</div>
 """, unsafe_allow_html=True)
-    st.markdown("---")
-    st.caption("Dataset: 16,432 observasi · 12 fitur rasio · 3 cluster")
+st.markdown("---")
+st.caption("Dataset: 16,432 observasi · 12 fitur rasio · 3 cluster")
 
 df_f = df[df["Cluster"].isin(selected_clusters)]
 
