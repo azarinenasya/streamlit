@@ -128,15 +128,8 @@ def generate_data(n=16432, seed=42):
 df = generate_data()
 
 # ─── Sidebar ─────────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("## 💰 Financial Health")
-    st.markdown("---")
-    st.markdown("### Filter Cluster")
-    selected_clusters = st.multiselect(
-        "Tampilkan cluster:",
-        options=[0, 1, 2], default=[0, 1, 2],
-        format_func=lambda x: f"{'🔴' if x==0 else '🟡' if x==1 else '🟢'} Cluster {x} – {CLUSTER_NAMES[x]}"
-    )
+    st.markdown("## Deskripsi")
+    st.info("Dashboard ini dirancang untuk memvisualisasikan dataset utama yang digunakan dalam pengembangan **SpendWise AI**.")
     st.markdown("---")
     st.markdown("### Pertanyaan Bisnis")
     st.markdown("""
@@ -239,35 +232,41 @@ with tab1:
     </div>""", unsafe_allow_html=True)
 
 with tab2:
-    st.markdown("<div class='section-header'>Q1 · Eksplorasi Alokasi Keuangan per Cluster</div>", unsafe_allow_html=True)
-
-    selected_cls = st.selectbox("Pilih Cluster untuk Detail Alokasi:", options=[0, 1, 2], 
-                            format_func=lambda x: f"Cluster {x} - {CLUSTER_NAMES[x]}")
+    st.markdown("#### Detail Alokasi per Kategori")
+    st.caption("Gunakan filter di bawah untuk melihat detail angka tiap kondisi keuangan.")
+    
+    # FILTER diletakkan di dalam Tab 2 agar hanya berpengaruh/muncul di sini
+    selected_cls = st.selectbox(
+        "Pilih Kondisi untuk Detail:", 
+        options=[0, 1, 2], 
+        format_func=lambda x: f"{CLUSTER_NAMES[x]}",
+        key="filter_q1_tab2" # Key unik agar tidak bentrok
+    )
 
     df_target = df[df["Cluster"] == selected_cls]
     avg_vals = df_target[FEATURE_COLS].mean()
 
-# Grid KPI untuk Rasio Keuangan
-    st.markdown(f"#### Rata-rata Penggunaan Dana - Cluster {CLUSTER_NAMES[selected_cls]}")
-    rows = [FEATURE_COLS[i:i + 4] for i in range(0, len(FEATURE_COLS), 4)]
+    # --- MULAI GRID KPI ---
+    # Membagi fitur menjadi baris-baris (4 kolom per baris)
+    for i in range(0, len(FEATURE_COLS), 4):
+        cols = st.columns(4)
+        for j, feat in enumerate(FEATURE_COLS[i:i+4]):
+            val = avg_vals[feat] * 100
+            cols[j].markdown(f"""
+            <div class='kpi-box'>
+                <div class='kpi-label'>{PRETTY[feat]}</div>
+                <div class='kpi-value' style='color:{COLORS[selected_cls]}'>{val:.1f}%</div>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom:10px'></div>", unsafe_allow_html=True)
 
-for row_cols in rows:
-    cols = st.columns(4)
-    for i, feat in enumerate(row_cols):
-        val = avg_vals[feat] * 100
-        cols[i].markdown(f"""
-        <div class='kpi-box'>
-            <div class='kpi-label'>{PRETTY[feat]}</div>
-            <div class='kpi-value' style='color:{COLORS[selected_cls]}'>{val:.1f}%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    st.markdown("<div style='margin-bottom:10px'></div>", unsafe_allow_html=True)
-
-st.markdown(f"""<div class='insight-box'>
-💡 <b>Insight Cluster {CLUSTER_NAMES[selected_cls]}:</b> Kelompok ini mengalokasikan 
-<b>{avg_vals['Savings_Ratio']*100:.1f}%</b> untuk Tabungan dan <b>{avg_vals['Loan_Repayment_Ratio']*100:.1f}%</b> 
-untuk Cicilan Hutang.
-</div>""", unsafe_allow_html=True)
+    # Insight Box di dalam Tab 2
+    st.markdown(f"""
+    <div class='insight-box'>
+        💡 <b>Insight {CLUSTER_NAMES[selected_cls]}:</b> Kelompok ini menghabiskan rata-rata 
+        <b>{avg_vals['Savings_Ratio']*100:.1f}%</b> untuk Tabungan.
+    </div>
+    """, unsafe_allow_html=True)
 
 with tab3:
     st.markdown("#### Rata-rata Alokasi per Kategori per Cluster")
