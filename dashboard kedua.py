@@ -128,10 +128,10 @@ def generate_data(n=16432, seed=42):
 df = generate_data()
 
 # ─── Sidebar ─────────────────────────────────────────────────────────────────────
-    st.markdown("## Deskripsi")
+st.markdown("## Deskripsi")
     st.info("Dashboard ini dirancang untuk memvisualisasikan dataset utama yang digunakan dalam pengembangan **SpendWise AI**.")
     st.markdown("---")
-    st.markdown("### Pertanyaan Bisnis")
+st.markdown("### Pertanyaan Bisnis")
     st.markdown("""
 <div class='bq-box'><b>Q1.</b> Apa pola alokasi keuangan yang membedakan tiap cluster dan seberapa besar proporsinya?</div>
 <div class='bq-box'><b>Q2.</b> Fitur finansial mana yang paling membedakan kondisi Crisis, Rentan, dan Aman?</div>
