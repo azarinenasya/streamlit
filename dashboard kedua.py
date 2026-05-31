@@ -324,12 +324,12 @@ with tab1:
         vals = means.loc[cluster_id].tolist()
         vals += vals[:1]
         cats = categories + [categories[0]]
-        fig_radar.add_trace(go.Scatterpolar(
-            r=vals, theta=cats, fill='toself',
-            name=f"Cluster {cluster_id} – {CLUSTER_NAMES[cluster_id]}",
-            line_color=COLORS[cluster_id],
-            fillcolor=COLORS[cluster_id].replace(")", ",0.15)").replace("rgb", "rgba") if "rgb" in COLORS[cluster_id] else COLORS[cluster_id] + "26",
-            opacity=0.9,
+      fig_radar.add_trace(go.Scatterpolar(
+        r=vals, theta=cats, fill='toself',
+        name=f"Cluster {cluster_id} – {CLUSTER_NAMES[cluster_id]}",
+        line_color=COLORS[cluster_id],
+        fillcolor=COLORS[cluster_id] + "26",  # hex + alpha 15% (26 dalam hex)
+        opacity=0.9,
         ))
 
     fig_radar.update_layout(
