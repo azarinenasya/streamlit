@@ -317,35 +317,34 @@ with tab1:
     means = df_f.groupby("Cluster")[FEATURE_COLS].mean()
     categories = [PRETTY[c] for c in FEATURE_COLS]
 
-    fig_radar = go.Figure()
-    for cluster_id in selected_clusters:
-        if cluster_id not in means.index:
-            continue
-        vals = means.loc[cluster_id].tolist()
-        vals += vals[:1]
-        cats = categories + [categories[0]]
-              fig_radar.add_trace(go.Scatterpolar(
-                r=vals, theta=cats, fill='toself',
-                name=f"Cluster {cluster_id} – {CLUSTER_NAMES[cluster_id]}",
-                line_color=COLORS[cluster_id],
-                fillcolor=COLORS[cluster_id] + "26",  # hex + alpha 15% (26 dalam hex)
-                opacity=0.9,
-                ))
-
-    fig_radar.update_layout(
-        polar=dict(
-            radialaxis=dict(visible=True, range=[0, 0.55], tickformat=".0%",
-                            gridcolor="rgba(255,255,255,0.08)", tickfont_color="rgba(255,255,255,0.3)"),
-            angularaxis=dict(gridcolor="rgba(255,255,255,0.08)", tickfont_color="rgba(255,255,255,0.7)"),
-            bgcolor="rgba(0,0,0,0)",
-        ),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="rgba(255,255,255,0.8)",
-        legend=dict(bgcolor="rgba(0,0,0,0)", font_color="white"),
-        height=450,
-        margin=dict(t=20, b=20),
-    )
+fig_radar = go.Figure()
+for cluster_id in selected_clusters:
+    if cluster_id not in means.index:
+        continue
+    vals = means.loc[cluster_id].tolist()
+    vals += vals[:1]
+    cats = categories + [categories[0]]
+    fig_radar.add_trace(go.Scatterpolar(
+        r=vals, theta=cats, fill='toself',
+        name=f"Cluster {cluster_id} – {CLUSTER_NAMES[cluster_id]}",
+        line_color=COLORS[cluster_id],
+        fillcolor=COLORS[cluster_id] + "26",
+        opacity=0.9,
+    ))
+fig_radar.update_layout(
+    polar=dict(
+        radialaxis=dict(visible=True, range=[0, 0.55], tickformat=".0%",
+                        gridcolor="rgba(255,255,255,0.08)", tickfont_color="rgba(255,255,255,0.3)"),
+        angularaxis=dict(gridcolor="rgba(255,255,255,0.08)", tickfont_color="rgba(255,255,255,0.7)"),
+        bgcolor="rgba(0,0,0,0)",
+    ),
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font_color="rgba(255,255,255,0.8)",
+    legend=dict(bgcolor="rgba(0,0,0,0)", font_color="white"),
+    height=450,
+    margin=dict(t=20, b=20),
+)
     st.plotly_chart(fig_radar, use_container_width=True)
 
 with tab2:
